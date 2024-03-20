@@ -98,8 +98,6 @@ io.on("connection", (socket) => {
 
         socket.broadcast.to(game_id).emit('game-status', 'game_exit')
 
-        disconnectAllFromRoom(game_id)
-
         game_id = null;
         user = null;
     });
@@ -118,8 +116,6 @@ io.on("connection", (socket) => {
         socket.broadcast.to(game_id).emit('game-status', 'game_exit')
         socket.emit('game-status', 'game_exit')
         socket.leave(game_id);
-
-        disconnectAllFromRoom(game_id)
 
         game_id = null;
         user = null;
@@ -256,15 +252,6 @@ io.on("connection", (socket) => {
             });
         }
     })
-
-    function disconnectAllFromRoom(roomId: string) {
-        const roomSockets = io.sockets.adapter.rooms.get(roomId);
-        if (roomSockets) {
-            roomSockets.forEach((socketId) => {
-                io.sockets.sockets.get(socketId)?.disconnect(true);
-            });
-        }
-    }
 });
 
 // Error handling middleware for Socket.IO
