@@ -6,6 +6,7 @@ import { Opponent } from './services/Opponent';
 import { ClientStatus, ErrorResponse } from './types';
 import cors from 'cors'
 import { statusToClient } from './utils/statusToClient';
+import 'dotenv/config'
 
 interface Listeners {
     "join-by-code": (params: { nickName: string; code: string; }) => void;
@@ -37,7 +38,7 @@ const io = new Server<Listeners, Emits>(server, {
         origin: "*",
     }
 });
-const port: number = 8000;
+const port: number = Number(process.env.PORT) || 8000;
 const matches: Record<string, Game> = {};
 
 /**
