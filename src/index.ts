@@ -96,7 +96,12 @@ io.on("connection", (socket) => {
             message: `${user.name} has been disconnected, please leave the game.`
         })
 
+        socket.broadcast.to(game_id).emit('game-status', 'game_exit')
+
         disconnectAllFromRoom(game_id)
+
+        game_id = null;
+        user = null;
     });
 
     socket.on("exit", () => {
@@ -110,6 +115,7 @@ io.on("connection", (socket) => {
             message: `${user.name} has left, please leave the game.`
         })
 
+        socket.broadcast.to(game_id).emit('game-status', 'game_exit')
         socket.emit('game-status', 'game_exit')
         socket.leave(game_id);
 
