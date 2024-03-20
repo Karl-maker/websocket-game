@@ -10,8 +10,6 @@ import 'dotenv/config'
 
 interface Listeners {
     "join-by-code": (params: { nickName: string; code: string; }) => void;
-    "join-by-id": (params: { nickName: string; id: string; }) => void;
-    "join-random": (params: { nickName: string; }) => void;
     "exit": () => void;
     "start": () => void;
     "play": (pickedEggs: number[]) => void;
@@ -86,7 +84,6 @@ app.get('/match', (req: Request, res: Response, next: NextFunction) => {
 io.on("connection", (socket) => {
     let user: Opponent | null = null;
     let game_id: string | null = null;
-    // ...
 
     socket.on("disconnect", () => {
         if(!user || !game_id) return;
@@ -98,6 +95,8 @@ io.on("connection", (socket) => {
             type: 'Unexpected Issue',
             message: `${user.name} has been disconnected, please leave the game.`
         })
+
+        disconnectAllFromRoom(game_id)
     });
 
     socket.on("exit", () => {
@@ -112,8 +111,9 @@ io.on("connection", (socket) => {
         })
 
         socket.emit('game-status', 'game_exit')
-
         socket.leave(game_id);
+
+        disconnectAllFromRoom(game_id)
 
         game_id = null;
         user = null;
@@ -194,45 +194,6 @@ io.on("connection", (socket) => {
         }
     })
 
-    socket.on("join-by-id", async (arr) => {
-
-        try {
-            const id = arr.id;
-            // find a game to join
-            if (matches[id]) {
-                    const game = matches[id];
-                    user = new Opponent(arr.nickName);
-                    const result = await matches[id].join({
-                        newPlayer: user
-                    });
-
-                    if(result.error) throw result.error;
-                    if(!result.game?.id) throw new Error('Issue Getting In Game');
-
-                    game_id = result.game?.id;
-                    io.to(id).emit('opponent-name', user.name);
-                    socket.join(id);
-                    socket.emit('game-started', { room: { sessionId: user.id } });
-                    socket.emit('opponent-name', result.opponent?.name || game.players[0].opponent.name);
-                    io.to(id).emit('game-status', statusToClient(game.state.current))
-                    io.to(id).emit('player-turn', user.id);
-            }
-
-            socket.emit('error', {
-                status: 404,
-                message: 'Game Not Found',
-                type: 'Not Found'
-            });
-
-        } catch(err: any) { 
-            socket.emit('error', {
-                status: err?.status || 500,
-                message: err?.message || 'Issue Occured',
-                type: err?.type || 'Unexpected Issue'
-            });
-        }
-    })
-
     socket.on("play", async (arr) => {
         try {
             // find a game to join
@@ -289,6 +250,21 @@ io.on("connection", (socket) => {
             });
         }
     })
+
+    function disconnectAllFromRoom(roomId: string) {
+        const roomSockets = io.sockets.adapter.rooms.get(roomId);
+        if (roomSockets) {
+            roomSockets.forEach((socketId) => {
+                io.sockets.sockets.get(socketId)?.disconnect(true);
+            });
+        }
+    }
+});
+
+// Error handling middleware for Socket.IO
+io.on('error', (err) => {
+    // Log the error
+    console.error('Socket.IO error:', err);
 });
 
 server.listen(port, () => {
