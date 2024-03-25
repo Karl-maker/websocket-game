@@ -242,7 +242,10 @@ io.on("connection", (socket) => {
 
             matches[game_id].move = [];
 
+            matches[game_id].firstTurn = matches[game_id].firstTurn === 0 ? 1 : 0;
+
             io.to(game_id).emit('game-status', statusToClient('play'))
+            io.to(game_id).emit('player-turn', matches[game_id].players[matches[game_id].firstTurn].opponent.id);
 
         } catch(err: any) { 
             socket.emit('error', {

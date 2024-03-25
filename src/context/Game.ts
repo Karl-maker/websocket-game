@@ -13,6 +13,7 @@ export class Game {
         opponent: Opponent;
         isReady: boolean;
     }[] = [];
+    public firstTurn: number = 0;
     public move: Move[] = [];
 
     constructor(code?: string) {
